@@ -1,0 +1,14 @@
+{
+  "name": "Cole's Big Playground",
+  "short_name": "Playground",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#63C7E8",
+  "theme_color": "#2E9BC4",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
