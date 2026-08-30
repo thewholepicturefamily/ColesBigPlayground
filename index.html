@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 br</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bs</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -2437,7 +2437,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 br) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 bs) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -3568,13 +3568,13 @@ function przFireworks(L){
    +"#rlStage{flex:1;position:relative;border-radius:24px;box-shadow:var(--shadow);overflow:hidden;min-height:120px;"
    +"background:linear-gradient(180deg,#A9E4F5 0%,#8FDBF0 46%,var(--grass) 46%,var(--grass-deep) 100%);touch-action:none;}"
    +"#rlTrack{position:absolute;left:4%;right:4%;bottom:9%;height:5px;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.75) 0 14px,rgba(255,255,255,0) 14px 28px);}"
-   +"#rlCole{position:absolute;bottom:8%;height:min(42%,38vw);z-index:4;will-change:transform;}"
+   +"#rlCole{position:absolute;bottom:8%;height:min(42%,38vw);z-index:2;will-change:transform;}"
    +"#rlCole img{height:100%!important;width:auto!important;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.22));}"
    +"#rlCole.walk img{animation:rlBob .36s ease-in-out infinite;}"
    +"@keyframes rlBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6%) rotate(2deg)}}"
    +"#rlCole.five img{animation:rlFive .6s cubic-bezier(.34,1.6,.6,1) 1;}"
    +"@keyframes rlFive{0%{transform:scale(1)}40%{transform:scale(1.13) translateY(-8%)}100%{transform:scale(1)}}"
-   +"#rlCaller{position:absolute;right:3%;bottom:8%;height:min(46%,42vw);z-index:3;perspective:500px;}"
+   +"#rlCaller{position:absolute;right:3%;bottom:8%;height:min(46%,42vw);z-index:4;perspective:500px;}"
    +"#rlCaller .flip{height:100%;transition:transform .3s ease;transform-style:preserve-3d;}"
    +"#rlCaller.away .flip{transform:rotateY(180deg);}"
    +"#rlCaller.away.noback img{filter:brightness(.72) saturate(.6) drop-shadow(0 3px 5px rgba(0,0,0,.22));}"
@@ -3679,15 +3679,17 @@ function rlLoop(now){ if(!RL) return;
   if(!RL.last) RL.last=now; const dt=Math.min(50,now-RL.last); RL.last=now;
   const st=$("rlStage"); if(!st||!st.clientWidth){ RAF=trackRAF(requestAnimationFrame(rlLoop)); return; }
   const W=st.clientWidth, cole=$("rlCole"), caller=$("rlCaller");
+  /* he stops a body's width short of the caller, so nobody gets covered up */
+  if(caller&&cole&&W){ const gap=((caller.offsetWidth||60)*.42+(cole.offsetWidth||60)*.30)/W;
+    RL.maxX=Math.max(.2,(caller.offsetLeft+(caller.offsetWidth||60)*.5)/W-gap); }
   const walking=RL.hold&&(RL.phase==="go"||RL.phase==="warn");
-  if(walking) RL.x=Math.min(.96,RL.x+dt*.00016);
+  if(walking) RL.x=Math.min(RL.maxX||.96,RL.x+dt*.00016);
   if(RL.hold&&(RL.phase==="freeze")&&(performance.now()-RL.freezeAt>250)) RL.wig=true;
   if(cole){ cole.classList.toggle("walk",walking);
     const cw=cole.offsetWidth||60; cole.style.transform="translate3d("+((RL.x*W)-cw/2).toFixed(1)+"px,0,0)"; }
   /* the finish line: reach the caller */
   if(caller&&RL.phase!=="five"&&RL.phase!=="done"){
-    const edge=W*.97-(caller.offsetWidth||60)*.5-10;   /* the friend's middle, give or take a hand */
-    if(RL.x*W>=edge&&(RL.phase==="go"||RL.phase==="warn")) rlFive();
+    if(RL.x>=(RL.maxX||.96)-.004&&(RL.phase==="go"||RL.phase==="warn")) rlFive();
   }
   RAF=trackRAF(requestAnimationFrame(rlLoop));
 }
