@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bw</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bx</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -992,14 +992,18 @@ say=function(t,who,onDone){
   const lips=(who==="guide"||who==="melissa"||!who);
   /* a cheer like "You did it!" is one short burst: split it on commas too, so each
      piece gets its own breath instead of blurring into the next */
-  const parts=(String(t).match(/[^.!?]+[.!?]*/g)||[String(t)])
+  const merge=list=>{ const out=[]; list.forEach(s=>{ const prev=out[out.length-1];
+      if(prev&&prev.split(/\s+/).length<4){ out[out.length-1]=prev+" "+s; } else out.push(s); });
+    if(out.length>1&&out[out.length-1].split(/\s+/).length<4){ const tail=out.pop(); out[out.length-1]+=" "+tail; }
+    return out; };
+  const parts=merge((String(t).match(/[^.!?]+[.!?]*/g)||[String(t)])
     .reduce((out,s)=>{ s=s.trim(); if(!s) return out;
       if(s.split(/\s+/).length<=9){ out.push(s); return out; }   /* a short line stays whole */
       const bits=s.split(/,(?=\s)/).map(b=>b.trim()).filter(Boolean);
       bits.forEach((b,n)=>{ const stub=b.split(/\s+/).length<3;    /* never leave a two-word stub */
         if(stub&&out.length) out[out.length-1]+=" "+b+(n<bits.length-1?",":"");
         else out.push(n<bits.length-1?b+",":b); });
-      return out; },[]);
+      return out; },[]));
   if(lips) startLips();
   try{ speechSynthesis.cancel(); }catch(e){}
   let i=0, first=true;
@@ -1008,19 +1012,25 @@ say=function(t,who,onDone){
     if(i>=parts.length){ if(lips) stopLips(); finish(); return; }
     const seg=(parts[i++]||"").trim();
     if(!seg) return next();
-    const short=seg.split(/\s+/).length<=5;      /* short cheers get said slower */
+    const words=seg.split(/\s+/).length;
+    const short=words<=5;                        /* short cheers get said slower */
+    const tiny=words<=3;                         /* and the shortest get extra room */
     let done=false;
     const go=()=>{ if(done||tok!==SAYTOK) return; done=true;
       if(i>=parts.length){ if(lips) stopLips(); finish(); return; }
-      setTimeout(next,((CFG&&CFG.sentencePauseMs)||430)+(short?120:0)); };
+      setTimeout(next,short?170:220); };
     try{
-      const u=new SpeechSynthesisUtterance(seg);
+      /* a comma between the words of a very short cheer stops them slurring into one */
+      const spoken=tiny?seg.replace(/([A-Za-z]+)\s+(?=[A-Za-z])/g,"$1, "):seg;
+      const u=new SpeechSynthesisUtterance(spoken);
       if(typeof VOICE!=="undefined"&&VOICE) u.voice=VOICE;
       const P=(typeof VP!=="undefined"&&(VP[who]||VP.narr))||{r:1,p:1};
-      u.rate=Math.max(.55,P.r*(short?.82:1)); u.pitch=P.p; u.onend=go; u.onerror=go;
+      u.rate=Math.max(.5,P.r*(tiny?.7:short?.82:1)); u.pitch=P.p; u.onend=go; u.onerror=go;
       setTimeout(go,_estMs(seg,who)+1500);
       /* iOS garbles a phrase spoken the instant after a cancel: let it settle first */
-      if(first){ first=false; setTimeout(()=>{ if(tok===SAYTOK) speechSynthesis.speak(u); },160); }
+      if(first){ first=false;
+        try{ const warm=new SpeechSynthesisUtterance(" "); warm.volume=0; warm.rate=1; speechSynthesis.speak(warm); }catch(e){}
+        setTimeout(()=>{ if(tok===SAYTOK) speechSynthesis.speak(u); },220); }
       else speechSynthesis.speak(u);
     }catch(e){ go(); }
   })();
@@ -2437,7 +2447,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bw) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 bx) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
