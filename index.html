@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bo</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bp</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -2437,7 +2437,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bo) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 bp) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -3325,7 +3325,7 @@ function guideHTML(standalone){
   +'<div class="gcard sky"><h2><span class="gi">'+art("ico_idea")+'</span>Buttons and settings</h2>'
   +'<ul><li>Top right: music, voice, and Quiet. Quiet makes every sound soft.</li>'
   +'<li>Top left: the map, and the backpack with everything he has found.</li>'
-  +'<li>Start over from the beginning is on the opening screen. It empties the backpack, so check with him first.</li>'
+  +'<li>Start over from the beginning is at the bottom of this guide. It empties the backpack, so check with him first.</li>'
   +'<li>After three visits, a spot gets a little harder. He can take the challenge or not.</li>'+'<li>In the Build Zone there is a camera button on the stage. It takes a photo of what he built, and the photos live behind the camera button at the top of the map. Six are kept, and each can be saved to the device or deleted.</li>'
   +'<li>Every third thing he finds, a prize machine appears. He taps to stop the spinning windows and match three in a row. It always ends in a prize, so the only surprise is which one.</li></ul>'
   +'<h2 style="margin-top:14px"><span class="gi">'+art("ico_go")+'</span>Putting it on a device</h2>'
@@ -3338,7 +3338,9 @@ function guideHTML(standalone){
   +'<ol class="gsteps"><li>Open the link in any browser and play it right there. Chrome and Edge also show a small install icon at the right end of the address bar if you want it as its own window.</li><li>A touch screen is best for the games, but a mouse works: click and drag instead of sliding a finger.</li></ol></div>'
 
   +'<div class="gcard"><p>Made for '+n+' by '+g+', from what you told her about him. Thank you for filling in the questionnaire.</p>'
-  +(standalone?'':'<div class="btnrow noprint"><button class="gbtn" id="gBack">Back to the playground</button></div>')
+  +(standalone?'':'<div class="btnrow noprint"><button class="gbtn" id="gBack">Back to the playground</button>'
+     +'<button class="gbtn soft" id="gReset">Start over from the beginning</button></div>'
+     +'<p class="gsub" style="margin-top:8px">Starting over empties the backpack and every spot begins again. It cannot be undone, so check with '+n+' first.</p>')
   +'</div></div></div>';
 }
 function guideBind(root){
@@ -3368,10 +3370,12 @@ function guideBind(root){
     const h1=inner.querySelector("h1"), sub=inner.querySelector("p.sub"), play=document.getElementById("startBtn"), reset=document.getElementById("resetLink");
     [h1,sub,play].forEach(e=>{ if(e) panel.appendChild(e); });
     const gb=document.createElement("button"); gb.className="big"; gb.id="guideBtn"; gb.textContent="For grown-ups"; panel.appendChild(gb);
-    if(reset) panel.appendChild(reset);
+    if(reset) reset.style.display="none";                       /* it lives in the guide now */
     inner.appendChild(panel);
     gb.onclick=()=>{ try{ blip(520); }catch(e){} const sc=document.getElementById("guideScroll"); sc.innerHTML=guideHTML(false); guideBind(sc); show("scr-guide"); sc.scrollTop=0;
-      const back=document.getElementById("gBack"); if(back) back.onclick=()=>{ try{ blip(520); }catch(e){} show("scr-title"); }; };
+      const back=document.getElementById("gBack"); if(back) back.onclick=()=>{ try{ blip(520); }catch(e){} show("scr-title"); };
+      const rs=document.getElementById("gReset");
+      if(rs) rs.onclick=()=>{ try{ blip(420); }catch(e){} const r=document.getElementById("resetLink"); if(r) r.click(); }; };
   }
 })();
 
