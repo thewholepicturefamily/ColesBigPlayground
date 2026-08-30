@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bs</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bw</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -1110,7 +1110,7 @@ function breatheStop(quiet){
   st.textContent="#fortScene{position:relative;width:min(100%,460px);margin:0 auto;aspect-ratio:250/120;}"
    +"#fortBg{position:absolute;inset:0;} #fortBg img,#fortBg svg{width:100%!important;height:100%!important;object-fit:contain;display:block;}"
    +"#hideMel{position:absolute;left:52%;bottom:6%;width:27%;} #hideMel img{width:100%!important;height:auto!important;display:block;}"
-   +"#homeSlot{position:absolute;left:14%;top:24%;display:flex;gap:4px;} #homeSlot>div{width:11%;min-width:44px;}"
+   +"#homeSlot{position:absolute;left:50%;transform:translateX(-50%);bottom:-4%;display:flex;gap:4%;width:70%;justify-content:center;align-items:flex-end;z-index:5;} #homeSlot>div{width:46%;max-width:210px;min-width:0;} #homeSlot img{width:100%;height:auto;display:block;filter:drop-shadow(0 4px 5px rgba(0,0,0,.25));}"
    +"#hideCole{position:absolute;left:19%;bottom:5%;width:37%;margin:0;display:block;"
    +"transition:transform 1.9s ease-in-out;}"
    +"#hideCole img{width:100%;height:auto;display:block;}";
@@ -1464,8 +1464,8 @@ function hideMenu(first){
       const who=CFG.family.athome.join(" and ");
       const faces=CFG.family.athome.map(n=>IMG[n.toLowerCase()]?im(n.toLowerCase()):"").filter(Boolean);
       if(faces.length){ const d=document.createElement("div"); d.id="homeFaces";
-        d.style.cssText="display:flex;justify-content:center;gap:6px;";
-        d.innerHTML=faces.map(f=>'<div style="width:52px;">'+f+'</div>').join(""); ($("homeSlot")||$("hideArt")).appendChild(d); }
+        d.style.cssText="display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:6px 0 2px;";
+        d.innerHTML=faces.map(f=>'<div style="width:min(38vw,150px);">'+f+'</div>').join(""); ($("homeSlot")||$("hideArt")).appendChild(d); }
       $("hideText").textContent=who+" say: "+CFG.homeMessage;
       say(who+" say, "+CFG.homeMessage,"guide",()=>hideMenu(false)); }
   },first?{wait:true}:{silent:true});
@@ -2437,7 +2437,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bs) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 bw) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -2897,7 +2897,10 @@ flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contai
    +"#sand{flex:1;padding:12px;border-radius:22px;border:10px solid #B8813F;background:#E9CE94 repeating-linear-gradient(45deg,rgba(255,255,255,.12) 0 6px,rgba(0,0,0,0) 6px 12px);"
    +"box-shadow:inset 0 6px 14px rgba(0,0,0,.12),var(--shadow);gap:8px;align-content:center;min-height:0;max-height:min(540px,62vh);position:relative;}"
    +"#sandBox{justify-content:center;}"
-   +".stile{background:transparent!important;box-shadow:none!important;min-height:0!important;position:relative;padding:0;overflow:visible;}"
+   +".stile{background:transparent!important;box-shadow:none!important;position:relative;padding:0;overflow:visible;"
+   +"min-height:62px!important;height:100%;display:flex;align-items:center;justify-content:center;}"
+   +"#sand{grid-auto-rows:minmax(62px,1fr);}"
+   +".stile>div{width:100%;}"
    +".stile>div{transition:transform .25s ease;}"
    +".stile.open{background:transparent!important;} .stile.dug{outline:0!important;}"
    +".stile .hole{position:absolute;left:50%;top:50%;width:min(88%,110px);height:min(70%,86px);transform:translate(-50%,-44%);border-radius:50%;background:radial-gradient(ellipse at 50% 40%,#B68A4E,#C99B5D 60%,#E9CE94 75%);opacity:0;transition:opacity .2s;}"
@@ -2916,12 +2919,17 @@ flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contai
   (document.head||document.body).appendChild(st); })();
 
 /* one wrapper around the sand grid so the racers can sit above it */
+function sandProps(){ const d=$("sand"); if(!d||d.querySelector(".sandprop")) return;
+  [["sand_bucket","left:-3%;bottom:-2%;width:17%;max-width:66px;"],["sand_sieve","right:-3%;bottom:-2%;width:18%;max-width:70px;"]]
+    .forEach(([k,css])=>{ if(!IMG[k]) return; const e=document.createElement("div");
+      e.className="sandprop"; e.style.cssText="position:absolute;pointer-events:none;z-index:0;opacity:.95;"+css;
+      e.innerHTML=im(k); d.appendChild(e); }); }
 function sandFrame(){ const d=$("sand"); if(!d) return; let box=$("sandBox");
   if(!box){ box=document.createElement("div"); box.id="sandBox"; d.parentNode.insertBefore(box,d);
     const r=document.createElement("div"); r.id="racers"; box.appendChild(r); box.appendChild(d); }
   $("racers").innerHTML='<div class="racer" id="rcYou"><div class="rimg">'+ART.cole()+'</div><div class="rpile"><div class="rb"></div><div class="rn">0</div><div class="rl">'+CFG.child.name+'</div></div></div>'
    +'<div class="racer right" id="rcHim"><div class="rimg">'+ART.friend("Sebastian")+'</div><div class="rpile"><div class="rb"></div><div class="rn">0</div><div class="rl">Sebastian</div></div></div>';
-  box.style.display="flex"; $("racers").style.display="flex"; }
+  box.style.display="flex"; $("racers").style.display="flex"; sandProps(); }
 function racerAdd(who,colour,coin){ const r=$(who==="you"?"rcYou":"rcHim"); if(!r) return;
   r.classList.remove("dig"); void r.offsetWidth; r.classList.add("dig");
   if(colour){ const rb=r.querySelector(".rb"); if(rb) rb.insertAdjacentHTML("beforeend",'<div>'+SANDART(colour,coin)+'</div>');
@@ -3845,6 +3853,11 @@ function albumOpen(){ let a=document.getElementById("album");
   a.classList.add("on");
 }
 /* the camera lives on the build stage, the shelf lives on the map */
+(function(){ const st=document.createElement("style");
+  st.textContent="#scr-build{position:relative;}"
+   +"#ideaMenu{position:absolute;left:10px;right:10px;bottom:10px;z-index:30;background:rgba(255,253,246,.96);"
+   +"border-radius:20px;padding:8px;box-shadow:0 6px 0 rgba(0,0,0,.12);max-height:52%;overflow-y:auto;}";
+  (document.head||document.body).appendChild(st); })();
 function camMount(){ const st=document.getElementById("buildStage");
   if(!st||typeof HTMLElement==="undefined"||document.getElementById("camBtn")) return;
   st.style.position="relative";
@@ -4033,8 +4046,8 @@ hideMenu=function(first){
       const who=CFG.family.athome.join(" and ");
       const faces=CFG.family.athome.map(n=>IMG[n.toLowerCase()]?im(n.toLowerCase()):"").filter(Boolean);
       if(faces.length){ const d=document.createElement("div"); d.id="homeFaces";
-        d.style.cssText="display:flex;justify-content:center;gap:6px;";
-        d.innerHTML=faces.map(f=>'<div style="width:52px;">'+f+'</div>').join(""); ($("homeSlot")||$("hideArt")).appendChild(d); }
+        d.style.cssText="display:flex;justify-content:center;align-items:flex-end;gap:14px;margin:6px 0 2px;";
+        d.innerHTML=faces.map(f=>'<div style="width:min(38vw,150px);">'+f+'</div>').join(""); ($("homeSlot")||$("hideArt")).appendChild(d); }
       $("hideText").textContent=who+" say: "+CFG.homeMessage;
       say(who+" say, "+CFG.homeMessage,"guide"); }
   };
