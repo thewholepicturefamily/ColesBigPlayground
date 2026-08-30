@@ -2487,8 +2487,10 @@ buildStart=function(){ show("scr-build");
    +".flyblk img{width:100%;height:auto;display:block;}"
    +".slot.got{animation:slotPop .4s cubic-bezier(.34,1.6,.6,1) 1;}"
    +"@keyframes slotPop{0%{transform:scale(.7)}60%{transform:scale(1.2)}100%{transform:scale(1)}}"
-   +".jet{z-index:1;} .jet:after{animation:jetTop var(--jd,3.2s) ease-in-out infinite;animation-delay:var(--jo,0s);}"
+   +".jet{z-index:3;bottom:9%!important;} .jet:after{animation:jetTop var(--jd,3.2s) ease-in-out infinite;animation-delay:var(--jo,0s);}"
    +"@keyframes jetTop{0%,18%{opacity:0}30%{opacity:1;transform:translateY(0)}44%{transform:translateY(-8px)}56%{transform:translateY(-2px);opacity:1}68%,100%{opacity:0}}"
+   +".jetbase{position:absolute;bottom:3.5%;width:15%;max-width:86px;margin-left:-3.7%;z-index:2;pointer-events:none;}"
+   +".jetbase img{width:100%;height:auto;display:block;filter:drop-shadow(0 3px 3px rgba(0,0,0,.18));}"
    +"#bucketWarn{top:auto!important;bottom:42%!important;font-size:16px!important;padding:8px 12px!important;}"
    +"#calmWrap{z-index:7!important;}";
   (document.head||document.body).appendChild(st);
@@ -2622,7 +2624,9 @@ splashStart=function(lvl){ show("scr-splash");
    +'<div id="dropLayer"></div><div id="bucketWarn"></div><div id="hero">'+ART.coleRun()+'</div>';
   const m=document.createElement("div"); m.id="mist"; a.appendChild(m);
   [[14,"3.1s","0s"],[50,"3.9s","1.3s"],[86,"3.4s","2.2s"]].forEach(j=>{ const d=document.createElement("div"); d.className="jet";
-    d.style.left=j[0]+"%"; d.style.setProperty("--jd",j[1]); d.style.setProperty("--jo",j[2]); a.appendChild(d); });
+    d.style.left=j[0]+"%"; d.style.setProperty("--jd",j[1]); d.style.setProperty("--jo",j[2]); a.appendChild(d);
+    if(IMG.splash_jet){ const n=document.createElement("div"); n.className="jetbase";
+      n.style.left=j[0]+"%"; n.innerHTML=im("splash_jet"); a.appendChild(n); } });
   ringMount();
   const mv=(e,drag)=>{ if(SP.bucket&&!drag) return; const r=a.getBoundingClientRect(); const cx=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
     const nx=Math.max(.06,Math.min(.94,cx/r.width)); SP.moved+=Math.abs(nx-SP.tx); SP.tx=nx; };
