@@ -2398,11 +2398,11 @@ buildStart=function(){ show("scr-build");
   $("ideaMenu").style.display="none"; $("ideaMenu").innerHTML="";
   buildRows(); drawHouse();
   const st=$("buildStage"); st.onclick=stageTap; st.classList.remove("drop");
-  const box=$("ideaMenu"); box.style.display="flex";
+  const box=$("ideaMenu"); box.style.display="flex"; window.__pickingMode=true;
   const it="You can build with Tristan, taking turns. Or you can build all by yourself. Both are good ways to build.";
   $("buildInstr").textContent="With Tristan, or by yourself?";
   const btns=choices(box,[{art:ICO.heart,w:"With Tristan",phrase:"Build with Tristan.",v:1},{art:ICO.blocks,w:"Myself",phrase:"Build by myself.",v:0}],
-   (c)=>{ BD.withPal=!!c.v; box.style.display="none"; box.innerHTML="";
+   (c)=>{ BD.withPal=!!c.v; box.style.display="none"; box.innerHTML=""; window.__pickingMode=false; setTimeout(()=>demoStart("build"),500);
      if(BD.withPal){ say("Tristan is ready. One piece each, taking turns. Drag a piece onto the stage, or tap a piece and then tap the spot. You go first."); $("buildInstr").textContent="Your turn. Drag or tap a piece."; }
      else { say("The whole stage is yours. Drag pieces up, put them anywhere, stack them, move them. Tap a piece to turn it. Drag one off the stage to take it away."); $("buildInstr").textContent="Build any way you like. Tap a piece to turn it."; } },{wait:true});
   say(it,"guide",()=>setTimeout(btns.narrate,300));
@@ -4048,7 +4048,7 @@ hideMenu=function(first){
    Both games open the way the Build Zone does: two big buttons. On his own, the
    friend simply does not take a turn, and everything else works the same. */
 function withOrAlone(screen,instrId,friend,line,onPick){
-  show(screen);
+  show(screen); window.__pickingMode=true;
   const instr=document.getElementById(instrId), host=instr&&instr.parentNode;
   if(!host||typeof HTMLElement==="undefined"){ onPick(true); return; }   /* no menu in the test harness */
   const box=document.createElement("div"); box.className="choices"; box.id="soloMenu";
@@ -4056,7 +4056,8 @@ function withOrAlone(screen,instrId,friend,line,onPick){
   document.getElementById(instrId).textContent="With "+friend+", or by yourself?";
   const btns=choices(box,[{art:ICO.heart,w:"With "+friend,phrase:"Play with "+friend+".",v:1},
                           {art:ICO.thumb,w:"Myself",phrase:"Play by myself.",v:0}],
-    (c)=>{ box.remove(); onPick(!!c.v); },{wait:true});
+    (c)=>{ box.remove(); window.__pickingMode=false; onPick(!!c.v);
+      const g=screen.replace("scr-",""); setTimeout(()=>demoStart(g),500); },{wait:true});
   say(line,"guide",()=>setTimeout(btns.narrate,250));
 }
 
@@ -4213,7 +4214,8 @@ function demoStart(g){
 })();
 
 const _startGameDemo=startGame;
-startGame=function(g){ demoEnd(false); _startGameDemo.apply(this,arguments); setTimeout(()=>demoStart(g),400); };
+startGame=function(g){ demoEnd(false); _startGameDemo.apply(this,arguments);
+  setTimeout(()=>{ if(!window.__pickingMode) demoStart(g); },400); };
 const _showDemo=show;
 show=function(){ demoEnd(false); return _showDemo.apply(this,arguments); };
 
