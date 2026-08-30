@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bx</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 by</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -2447,7 +2447,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bx) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 by) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -4180,13 +4180,26 @@ withOrAlone=function(screen,instrId,friend,line,onPick){
   setTimeout(()=>demoStart(k),450);
 };
 const _buildStartMode=buildStart;
-buildStart=function(){ _buildStartMode.apply(this,arguments);
+buildStart=function(){
+  const box0=$("ideaMenu"); if(box0) box0.style.visibility="hidden";   /* no flash of a second question */
+  _buildStartMode.apply(this,arguments);
   const box=$("ideaMenu"); if(!box||typeof HTMLElement==="undefined") return;
-  const want=pickedMode("build");
-  const btn=box.querySelectorAll(".pbig")[want?0:1];
   window.__pickingMode=false;
-  if(btn) setTimeout(()=>btn.click(),30);   /* already chosen at the door */
+  answerModeIfAsked();
+  box.style.visibility="";
+  /* the Watch-first demo restarts the build zone, which brings the question back:
+     whenever it reappears and he has already answered at the door, answer it for him */
+  if(!window.__modeWatch) window.__modeWatch=setInterval(answerModeIfAsked,250);
 };
+function answerModeIfAsked(){
+  if(typeof HTMLElement==="undefined") return;
+  if(curScreen()!=="scr-build") return;
+  const m=document.getElementById("ideaMenu"); if(!m) return;
+  const bs=m.querySelectorAll(".pbig");
+  if(bs.length!==2||!/Tristan/.test(bs[0].textContent)) return;       /* only the mode question */
+  const b=bs[pickedMode("build")?0:1]; if(b) b.click();
+  m.style.display="none"; m.innerHTML="";
+}
 
 /* ============ show first, then do (Q25) ============
    The first time he opens a place, the game plays itself for a few seconds with a
