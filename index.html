@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bp</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 br</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -2437,7 +2437,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bp) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 br) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -4103,6 +4103,60 @@ sandStart=function(lvl){
       say("All by yourself this time. Dig up as much treasure as you like."); } };
   withOrAlone("scr-sand","sandInstr","Sebastian",
     "You can race Sebastian to dig up the treasure. Or you can dig all by yourself. Both are good.",go);
+};
+
+
+/* ============ the with-a-friend choice lives on the intro screen ============
+   The intro used to offer two flavour answers (Turns / Watch). For the three games
+   that can be played together, those become the real choice: "With Amelia" on the
+   left, "By myself" on the right. Whatever he picks is what the game starts as, so
+   it is never asked twice, and the demo follows straight after. */
+const MODE_GAMES={snack:"Amelia",sand:"Sebastian",build:"Tristan"};
+let MODE_PICK={};
+
+function modeChoices(k){ const f=MODE_GAMES[k];
+  return [{art:ICO.heart,w:"With "+f,phrase:"Play with "+f+".",v:1,r:f+" is ready. Come on!"},
+          {art:ICO.thumb,w:"By myself",phrase:"Play by myself.",v:0,r:"All by yourself. Take as long as you like."}]; }
+
+(function(){
+  Object.keys(MODE_GAMES).forEach(k=>{ if(INTROS[k]) INTROS[k].ch=modeChoices(k); });
+  const _intro=intro, _quip=quip;
+  intro=function(k,then){
+    if(!MODE_GAMES[k]) return _intro.apply(this,arguments);
+    _intro.call(this,k,then);
+    hookMode(k);
+  };
+  quip=function(k,then){
+    if(!MODE_GAMES[k]) return _quip.apply(this,arguments);
+    const st=INTROS[k], l=QUIPS[k], q=l[Math.floor(Math.random()*l.length)];
+    $("storyChar").innerHTML=st.art(); $("storyText").textContent=q;
+    show("scr-story");
+    const btns=choices($("storyChoices"),modeChoices(k),(c)=>{ MODE_PICK[k]=!!c.v;
+      $("storyChoices").innerHTML=""; $("storyText").textContent=c.r;
+      say(c.r,st.who,()=>setTimeout(then,400)); },{wait:true});
+    say(q,st.who,()=>setTimeout(btns.narrate,400));
+  };
+  /* the intro's own buttons record the choice too */
+  function hookMode(k){ setTimeout(()=>{
+    document.querySelectorAll("#storyChoices .pbig").forEach((b,i)=>{
+      const prev=b.onclick; b.onclick=e=>{ MODE_PICK[k]=(i===0); if(prev) prev.call(b,e); }; });
+  },60); }
+})();
+
+/* the games take the choice already made, and never ask again */
+function pickedMode(k){ return MODE_PICK[k]===undefined?true:MODE_PICK[k]; }
+withOrAlone=function(screen,instrId,friend,line,onPick){
+  const k=screen.replace("scr-","");
+  onPick(pickedMode(k));
+  setTimeout(()=>demoStart(k),450);
+};
+const _buildStartMode=buildStart;
+buildStart=function(){ _buildStartMode.apply(this,arguments);
+  const box=$("ideaMenu"); if(!box||typeof HTMLElement==="undefined") return;
+  const want=pickedMode("build");
+  const btn=box.querySelectorAll(".pbig")[want?0:1];
+  window.__pickingMode=false;
+  if(btn) setTimeout(()=>btn.click(),30);   /* already chosen at the door */
 };
 
 /* ============ show first, then do (Q25) ============
