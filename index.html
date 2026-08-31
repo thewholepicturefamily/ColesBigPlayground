@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bz</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 ce</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -992,7 +992,8 @@ say=function(t,who,onDone){
   const lips=(who==="guide"||who==="melissa"||!who);
   /* a cheer like "You did it!" is one short burst: split it on commas too, so each
      piece gets its own breath instead of blurring into the next */
-  const merge=list=>{ const out=[]; list.forEach(s=>{ const prev=out[out.length-1];
+  /* a three word cheer at the end of a sentence gets slurred: keep it separate */
+  const merge=list=>{ const out=[]; list.filter(s=>s&&s.trim()).forEach(s=>{ const prev=out[out.length-1];
       if(prev&&prev.split(/\s+/).length<4){ out[out.length-1]=prev+" "+s; } else out.push(s); });
     if(out.length>1&&out[out.length-1].split(/\s+/).length<4){ const tail=out.pop(); out[out.length-1]+=" "+tail; }
     return out; };
@@ -1014,18 +1015,18 @@ say=function(t,who,onDone){
     if(!seg) return next();
     const words=seg.split(/\s+/).length;
     const short=words<=5;                        /* short cheers get said slower */
-    const tiny=words<=3;                         /* and the shortest get extra room */
+    const tiny=words<=2;                         /* only a two word cheer needs help */
     let done=false;
     const go=()=>{ if(done||tok!==SAYTOK) return; done=true;
       if(i>=parts.length){ if(lips) stopLips(); finish(); return; }
       setTimeout(next,short?170:220); };
     try{
       /* a comma between the words of a very short cheer stops them slurring into one */
-      const spoken=tiny?seg.replace(/([A-Za-z]+)\s+(?=[A-Za-z])/g,"$1, "):seg;
+      const spoken=(tiny&&/[!?]/.test(seg)&&!/^(a|an|the)\s/i.test(seg))?seg.replace(/([A-Za-z]+)\s+(?=[A-Za-z])/g,"$1, "):seg;
       const u=new SpeechSynthesisUtterance(spoken);
       if(typeof VOICE!=="undefined"&&VOICE) u.voice=VOICE;
       const P=(typeof VP!=="undefined"&&(VP[who]||VP.narr))||{r:1,p:1};
-      u.rate=Math.max(.5,P.r*(tiny?.7:short?.82:1)); u.pitch=P.p; u.onend=go; u.onerror=go;
+      u.rate=Math.max(.62,P.r*(tiny?.86:short?.93:1)); u.pitch=P.p; u.onend=go; u.onerror=go;
       setTimeout(go,_estMs(seg,who)+1500);
       /* iOS garbles a phrase spoken the instant after a cancel: let it settle first */
       if(first){ first=false;
@@ -1593,7 +1594,7 @@ function readSign(){
     b.onclick=()=>{ if(SP.read) return;
       if(s===w){ SP.read=true; b.classList.add("on"); chord([523,659,784]);
         try{ const r=b.getBoundingClientRect(),ar=a.getBoundingClientRect(); parts(a,r.left-ar.left+r.width/2,r.top-ar.top+r.height/2,12); }catch(e){}
-        say("That one says "+w+". You read it!","guide",()=>{ if(box.remove) box.remove(); found("splash"); }); }
+        say("That one says "+w+". And you read it all by yourself","guide",()=>{ if(box.remove) box.remove(); found("splash"); }); }
       else { wrong++; blip(390,.12,"sine"); say("That sign says "+s+". Find the one that says "+w+".","guide");
         if(wrong>=2){ list.forEach((s2,j)=>{ if(s2===w&&row.children[j]) row.children[j].classList.add("on"); }); } } };
     row.appendChild(b); });
@@ -2447,7 +2448,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 bz) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 ce) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -2861,7 +2862,7 @@ snackStart=function(lvl){ show("scr-snack");
 
 flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contains("done"))return;
   blip(600); b.classList.add("up");
-  if(you)say(b.dataset.k); SN.seen[b.dataset.i]=b.dataset.k; SN.open.push(b);
+  if(you)sayPlain(b.dataset.k); SN.seen[b.dataset.i]=b.dataset.k; SN.open.push(b);
   if(SN.open.length===2){ SN.lock=true; const [a,c]=SN.open;
     setTimeout(()=>{
       if(a.dataset.k===c.dataset.k){ a.classList.add("done","bounce");c.classList.add("done","bounce"); chord([523,659]); SN.left--;
@@ -2870,7 +2871,8 @@ flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contai
         SN.open=[];SN.lock=false;
         if(SN.left<=0){ say("Every pair is made! You found "+SN.you+". Amelia found "+SN.her+". Together, all of them.");
           setTimeout(()=>found("snack"),500); return; }
-        if(SN.turn==="you"){ SN.turn="her"; badge("her");
+        if(SN.solo){ say(pick(["A pair! Good matching.","That is a pair. Nice looking.","Two the same. Well spotted."])); }
+        else if(SN.turn==="you"){ SN.turn="her"; badge("her");
           say("A pair! Good matching. Now it is Amelia's turn.");
           setTimeout(herTurn,CFG.tuning.helperMs); }
         else { SN.turn="you"; badge("you");
@@ -2878,7 +2880,8 @@ flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contai
       else { a.classList.add("shake"); c.classList.add("shake"); blip(390,.12,"sine",.06);
         setTimeout(()=>{ a.classList.remove("up","shake");c.classList.remove("up","shake");
           SN.open=[];SN.lock=false;
-          if(SN.turn==="you"){ SN.turn="her"; badge("her"); say("Not a pair. Now it is Amelia's turn. Watch her cards.");
+          if(SN.solo){ say(pick(["Not a pair. Try again.","Not those two. Have another go.","Different foods. Keep looking."])); }
+          else if(SN.turn==="you"){ SN.turn="her"; badge("her"); say("Not a pair. Now it is Amelia's turn. Watch her cards.");
             setTimeout(herTurn,CFG.tuning.helperMs); }
           else { SN.turn="you"; badge("you"); say("Your turn now."); } },520); }
     },900); }
@@ -3663,7 +3666,7 @@ function rlGo(first){ if(!RL) return; RL.phase="go"; RL.wig=false;
   rlTurnAway();
   rlBubble("GO!","go"); blip(700,.09); setTimeout(()=>rlBubble(null),900);
   $("rlHint").classList.remove("on");
-  const dur=(2600-RL.lvl*350)+Math.random()*1600;
+  const dur=(2000-RL.lvl*300)+Math.random()*1200;   /* he gets a turn sooner */
   RL.timer=setTimeout(()=>rlWarn(),dur);
 }
 function rlWarn(){ if(!RL||RL.phase!=="go") return;
@@ -3671,7 +3674,7 @@ function rlWarn(){ if(!RL||RL.phase!=="go") return;
   blip(500,.09,"sine",.07); setTimeout(()=>blip(560,.09,"sine",.06),340);
   RL.timer=setTimeout(()=>rlFreeze(),[1350,1100,900,750][Math.min(RL.lvl,3)]);
 }
-function rlFreeze(){ if(!RL||RL.done) return; RL.phase="freeze"; $("rlHint").classList.remove("on");
+function rlFreeze(){ if(!RL||RL.done) return; RL.freezes=(RL.freezes||0)+1; RL.phase="freeze"; $("rlHint").classList.remove("on");
   const pick=RL_FACES[Math.floor(Math.random()*RL_FACES.length)]; RL.pose=pick;
   const c=$("rlCaller"); c.classList.remove("away","noback"); c.querySelector(".flip").innerHTML=rlPose(RL.caller,pick[0]);
   rlBubble("FREEZE!","stop"); blip(330,.14,"square",.08);
@@ -3705,7 +3708,10 @@ function rlLoop(now){ if(!RL) return;
   if(caller&&cole&&W){ const gap=((caller.offsetWidth||60)*.42+(cole.offsetWidth||60)*.30)/W;
     RL.maxX=Math.max(.2,(caller.offsetLeft+(caller.offsetWidth||60)*.5)/W-gap); }
   const walking=RL.hold&&(RL.phase==="go"||RL.phase==="warn");
-  if(walking) RL.x=Math.min(RL.maxX||.96,RL.x+dt*.00016);
+  if(walking){ const step=dt*.000115;
+    /* he cannot cross the last stretch until the caller has turned at least once */
+    const cap=(RL.freezes||0)>=1?(RL.maxX||.96):Math.min(RL.maxX||.96,.62);
+    RL.x=Math.min(cap,RL.x+step); }
   if(RL.hold&&(RL.phase==="freeze")&&(performance.now()-RL.freezeAt>250)) RL.wig=true;
   if(cole){ cole.classList.toggle("walk",walking);
     const cw=cole.offsetWidth||60; cole.style.transform="translate3d("+((RL.x*W)-cw/2).toFixed(1)+"px,0,0)"; }
@@ -4026,6 +4032,16 @@ loopFix=function(){ if(!FX||FX.done) return;
   RAF=trackRAF(requestAnimationFrame(loopFix));
 };
 function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+/* a single word, said once, at normal speed: card names should not drag */
+function sayPlain(t){ if(!S.voiceOn||!t) return;
+  if(typeof DEMO!=="undefined"&&DEMO) return;          /* the demo is talking: do not talk over it */
+  try{
+    const u=new SpeechSynthesisUtterance(String(t));
+    const P=VP.guide; u.rate=P.r; u.pitch=P.p;
+    const v=(typeof pickVoice==="function")?pickVoice("guide"):null; if(v) u.voice=v;
+    /* queue it: a second card never cuts the first card's name short */
+    speechSynthesis.speak(u);
+  }catch(e){} }
 
 /* the talk comes first, once */
 /* the talk comes after he has fixed it, the first time only */
@@ -4116,11 +4132,14 @@ herTurn=function(){ if(SN&&SN.solo){ SN.turn="you"; SN.lock=false; return; } _he
 const _saySolo=say;
 say=function(t,who,cb){
   if(SN&&SN.solo&&typeof t==="string"){
-    if(/Amelia/.test(t)&&/turn|found a pair|Yay/.test(t)) t=t.replace(/Now it is Amelia's turn\.?|Amelia found a pair! Yay, Amelia! Your turn now\.?|Watch her cards\.?/g,"").trim();
     if(/Every pair is made/.test(t)) t="Every pair is made! You found all "+SN.you+".";
+    else if(/Amelia/i.test(t)){                        /* drop any sentence that mentions her */
+      t=(t.match(/[^.!?]+[.!?]*/g)||[t]).filter(s=>!/Amelia/i.test(s)).join(" ").trim();
+      t=t.replace(/\bWatch her cards\.?/gi,"").replace(/\bYour turn now\b/i,"Keep going").trim();
+    }
     if(!t) { if(cb) cb(); return; }
   }
-  return _saySolo.apply(this,arguments); };
+  return _saySolo.call(this,t,who,cb); };   /* pass the edited line, not the original */
 
 const _sandStartSolo=sandStart;
 sandStart=function(lvl){
@@ -4210,7 +4229,9 @@ function demoEnd(sayIt){ if(!DEMO) return; const d=DEMO; DEMO=null;
   try{ if(d.raf) cancelAnimationFrame(d.raf); }catch(e){}
   (d.timers||[]).forEach(t=>clearTimeout(t));
   try{ if(d.layer&&d.layer.remove) d.layer.remove(); }catch(e){}
-  if(sayIt!==false) say("Your turn!","guide"); }
+  if(sayIt!==false){ window.__demoJustEnded=Date.now(); say("Your turn!","guide"); } }
+/* nothing may interrupt the demo's last line for a moment */
+function demoQuietMs(){ const t=window.__demoJustEnded||0; return Math.max(0,900-(Date.now()-t)); }
 function demoHandTo(el,then){ if(!DEMO) return;
   try{ const r=el.getBoundingClientRect(); DEMO.hand.style.left=(r.left+r.width/2)+"px"; DEMO.hand.style.top=(r.top+r.height/2)+"px"; }catch(e){}
   if(then) DEMO.timers.push(setTimeout(then,520)); }
@@ -4302,7 +4323,7 @@ function demoStart(g){
         const bs=[].slice.call(document.querySelectorAll("#rlFaces .pbig"));
         const want=RL.pose&&RL.pose[1], b=bs.filter(x=>x.textContent.trim()===want)[0];
         if(b&&!DEMO.picked){ DEMO.picked=true;
-          demoHandTo(b,()=>demoWait(500,()=>{ if(!DEMO) return; demoTap(b); demoWait(900,()=>demoEnd(true)); }));
+          demoHandTo(b,()=>demoWait(500,()=>{ if(!DEMO) return; demoTap(b); demoWait(1400,()=>demoEnd(true)); }));
           return; }
       }
       DEMO.raf=requestAnimationFrame(step); })();
