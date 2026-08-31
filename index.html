@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 by</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 bz</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -2447,7 +2447,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 by) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 bz) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -4273,7 +4273,7 @@ function demoStart(g){
    one: the hand holds to walk, lets go the moment the caller turns, then taps the face
    that matches. Cole takes over from wherever the demo left him. */
 (function(){
-  if(!S.seen.__rlDemoReset){ S.seen.__rlDemoReset=true; S.seen.demo_play=false; save(); }
+  setTimeout(()=>{ if(!S.seen.__rlDemoReset){ S.seen.__rlDemoReset=true; S.seen.demo_play=false; save(); } },1200);
   const _demoStart=demoStart;
   demoStart=function(g){
     if(g!=="play") return _demoStart.apply(this,arguments);
