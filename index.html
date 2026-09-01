@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cl</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cn</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -1809,10 +1809,12 @@ function give(i){ if(SD.phase!=="share"||SD.pot<=0)return;
   if(SD.next===0){
     if(SD.pot===0){ SD.crew.forEach((n,i2)=>{ const e=$("fr"+i2); if(e) e.classList.remove("glow"); });
       $("sandInstr").textContent="Everyone has "+SD.given[0]+". The same for each friend.";
-      say("Everyone has "+SD.given[0]+". The same for each friend.",undefined,()=>setTimeout(signsStart,600)); SD.phase="mid"; return; }
+      SD.phase="mid";
+      if(SD.coins>0){                                  /* the gold is still to decide about */
+        say("Everyone has "+SD.given[0]+". The same for each friend.",undefined,()=>setTimeout(()=>leftover(SD.coins),400)); return; }
+      say("Everyone has "+SD.given[0]+". The same for each friend.",undefined,()=>setTimeout(signsStart,600)); return; }
     if(SD.pot<SD.n){ SD.crew.forEach((n,i2)=>{ const e=$("fr"+i2); if(e) e.classList.remove("glow"); }); SD.phase="mid";
-      const extra=SD.pot+((SD.coins&&!SD.coinsUsed)?(SD.coinsUsed=1,SD.coins):0);
-      leftover(extra); return; }
+      leftover(SD.pot+(SD.coins||0)); return; }
   } glow();
 }
 /* the crew choices: a picture on the button, and a scene of what happened while she says it */
@@ -2486,7 +2488,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 cl) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 cn) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -3414,6 +3416,7 @@ function guideHTML(standalone){
   +'<div class="gcard sky"><h2><span class="gi">'+art("ico_idea")+'</span>Buttons and settings</h2>'
   +'<ul><li>Top right: music, voice, and Quiet. Quiet makes every sound soft.</li>'
   +'<li>Top left: the map, and the backpack with everything he has found.</li>'
+  +((CFG.gate&&CFG.gate.length)?('<li><b>The picture code:</b> the game opens with eight pictures and '+n+' taps three of them in order. His code is <b>'+CFG.gate.map(k=>GATE_NAME[k]).join(', then ')+'</b>. Wrong taps just clear and he can try again.</li>'):'')
   +'<li>Start over from the beginning is at the bottom of this guide. It empties the backpack, so check with him first.</li>'
   +'<li>After three visits, a spot gets a little harder. He can take the challenge or not.</li>'+'<li>In the Build Zone there is a camera button on the stage. It takes a photo of what he built, and the photos live behind the camera button at the top of the map. Six are kept, and each can be saved to the device or deleted.</li>'
   +'<li>Every third thing he finds, a prize machine appears. He taps to stop the spinning windows and match three in a row. It always ends in a prize, so the only surprise is which one.</li></ul>'
@@ -3688,7 +3691,7 @@ function przFireworks(L){
 
 let RL=null;
 const RL_FACES=[["happy","Happy","I was HAPPY! Big happy!"],["sad","Sad","I was feeling sad. A high five helps."],
-                ["unsure","Thinking","I was thinking about it. My not sure face."],["stand","Calm","I was calm. Just watching the clouds."]];
+                ["unsure","Not sure","I was not sure about it. My thinking face."],["stand","Calm","I was calm. Just watching the clouds."]];
 function rlPose(who,pose){ return im(who.toLowerCase()+"_"+pose)||im(who.toLowerCase()+"_stand")||ART.friend(who,{}); }
 function rlBack(who){ return im(who.toLowerCase()+"_back"); }   /* a real back view, if that friend has one */
 function rlTurnAway(){ const c=$("rlCaller"); if(!c) return; const back=rlBack(RL.caller);
@@ -4319,6 +4322,166 @@ function answerModeIfAsked(){
   const b=bs[pickedMode("build")?0:1]; if(b) b.click();
   m.style.display="none"; m.innerHTML="";
 }
+
+
+/* ============ THE GATE ============
+   A picture lock a five year old can do on his own: three taps, in order, on
+   pictures from his own game. No letters, no numbers, no keyboard. A wrong tap
+   just clears quietly and he tries again, with no telling off. The order lives in
+   CFG.gate and is written in the grown-up guide. */
+CFG.gate=null;   /* set to ["fish","snail","pizza"] to switch the picture code back on */
+const GATE_ART={ fish:()=>im("fish")||ART.fish(), snail:()=>im("snail_green")||ART.snail("#69C267"),
+  pizza:()=>im("food_pizza")||"", block:()=>im("blk_blue")||ART.block("#63C7E8"),
+  drop:()=>im("drop_red")||"", badge:()=>im("badge_yellow")||"", star:()=>im("star_full")||"", cake:()=>im("food_cupcake")||"" };
+const GATE_NAME={ fish:"the fish", snail:"the snail", pizza:"the pizza", block:"the block",
+  drop:"the water drop", badge:"the badge", star:"the star", cake:"the cupcake" };
+
+(function(){ const st=document.createElement("style");
+  st.textContent=
+   "#gate,#gate *{box-sizing:border-box;}"
+   +"#gate{position:fixed;inset:0;z-index:120;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px;"
+   +"background:linear-gradient(180deg,#A9E4F5,#63C7E8 60%,#69C267 60%,#4CA34B);}"
+   +"#gate.on{display:flex;}"
+   +"#gateCard{background:var(--white);border-radius:26px;box-shadow:var(--shadow);padding:14px;max-width:460px;width:100%;max-height:92vh;overflow:auto;text-align:center;}"
+   +"#gateCard h2{margin:0 0 2px;font-size:21px;color:var(--ink);} #gateCard p{margin:0 0 8px;font-weight:800;color:#5A6B74;font-size:15px;}"
+   +"#gateDots{display:flex;gap:10px;justify-content:center;margin-bottom:10px;}"
+   +"#gateDots i{width:18px;height:18px;border-radius:50%;background:#DCE7ED;box-shadow:inset 0 2px 0 rgba(0,0,0,.06);}"
+   +"#gateDots i.on{background:var(--sun);}"
+   +"#gateGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;}"
+   +".gkey{border:none;background:var(--sky);border-radius:20px;box-shadow:var(--shadow);padding:10px;cursor:pointer;aspect-ratio:1/1;"
+   +"display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}"
+   +".gkey img,.gkey svg{width:82%;height:auto;display:block;pointer-events:none;}"
+   +".gkey:active,.gkey.hit{transform:scale(.93);}"
+   +".gkey.hit{background:var(--sun);}"
+   +"#gate.shake #gateCard{animation:gshake .4s ease-in-out 1;}"
+   +"@keyframes gshake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}";
+  (document.head||document.body).appendChild(st); })();
+
+function gateOpen(then){
+  if(typeof HTMLElement==="undefined"||!CFG.gate||!CFG.gate.length){ then(); return; }
+  let g=document.getElementById("gate");
+  if(!g){ g=document.createElement("div"); g.id="gate";
+    g.innerHTML='<div id="gateCard"><h2>Hello '+CFG.child.name+'!</h2><p>Tap your three pictures.</p>'
+      +'<div id="gateDots"></div><div id="gateGrid"></div></div>';
+    document.body.appendChild(g); }
+  const dots=g.querySelector("#gateDots"), grid=g.querySelector("#gateGrid");
+  const keys=Object.keys(GATE_ART).slice(0,8).sort(()=>Math.random()-.5);
+  let got=[];
+  const paint=()=>{ dots.innerHTML=CFG.gate.map((_,i)=>'<i class="'+(i<got.length?"on":"")+'"></i>').join(""); };
+  grid.innerHTML="";
+  keys.forEach(k=>{ const b=document.createElement("button"); b.className="gkey"; b.dataset.k=k;
+    b.innerHTML=GATE_ART[k]?GATE_ART[k]():""; b.title=GATE_NAME[k]||k;
+    b.onclick=()=>{ try{ blip(560+got.length*80,.06); }catch(e){}
+      b.classList.add("hit"); setTimeout(()=>b.classList.remove("hit"),180);
+      got.push(k); paint();
+      const ok=CFG.gate.slice(0,got.length).join("|")===got.join("|");
+      if(!ok){ got=[]; g.classList.add("shake"); setTimeout(()=>{ g.classList.remove("shake"); paint(); },420);
+        try{ blip(300,.12,"sine",.06); }catch(e){}
+        try{ say("Not those ones. Try again, "+CFG.child.name+"."); }catch(e){}
+        return; }
+      if(got.length===CFG.gate.length){
+        try{ chord([523,659,784]); }catch(e){}
+        setTimeout(()=>{ g.classList.remove("on"); then(); },420); }
+    };
+    grid.appendChild(b); });
+  paint(); g.classList.add("on");
+  try{ say("Hello "+CFG.child.name+". Tap your three pictures to come in. "+CFG.gate.map(k=>GATE_NAME[k]).join(", then ")+"."); }catch(e){}
+}
+/* the gate stands in front of the game until he opens it */
+(function(){
+  if(typeof HTMLElement==="undefined") return;
+  const wrap=()=>{ const startBtn=document.getElementById("startBtn"); if(!startBtn||startBtn.__gated) return;
+    const play=startBtn.onclick; if(!play) return;
+    startBtn.__gated=true;
+    startBtn.onclick=()=>{ if(S.seen.__gateOpen){ play.call(startBtn); return; }
+      gateOpen(()=>{ S.seen.__gateOpen=true; play.call(startBtn); }); }; };
+  setTimeout(wrap,0); setTimeout(wrap,400); window.addEventListener("load",()=>setTimeout(wrap,50));
+})();
+
+
+/* ============ SANDBOX: what happens when there is something left over ============
+   Gems are shared one each. Gold coins are never shared: they are the extras, and
+   what the crew does with them is the whole point of the moment. Each choice now
+   has something to watch, not just a line of speech. */
+(function(){ const st=document.createElement("style");
+  st.textContent=
+   "#crewShow{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0;}"
+   +"#crewShow .row{display:flex;gap:6px;justify-content:center;align-items:flex-end;flex-wrap:nowrap;width:100%;}"
+   +"#crewShow .who{flex:1 1 0;max-width:74px;min-width:0;text-align:center;font-weight:800;font-size:11px;}"
+   +"#crewShow .who>div{width:100%;} #crewShow .who .got{margin-top:2px;display:flex;gap:2px;justify-content:center;}"
+   +"#crewShow .who .got>div{width:17px;}"
+   +"#crewShow .box{width:min(56%,220px);}"
+   +"#crewShow .fly{position:absolute;width:26px;transition:transform .7s cubic-bezier(.2,.8,.3,1),opacity .3s .6s;z-index:5;}"
+   +"#crewShow .cap{font-weight:800;color:var(--ink);font-size:15px;text-align:center;}";
+  (document.head||document.body).appendChild(st); })();
+
+/* the crew, drawn small, with what each of them is holding */
+function crewRow(extraOwner){
+  return '<div class="row">'+SD.crew.map((nm,i)=>{
+    const art=(nm===CFG.child.name)?ART.cole():ART.friend(nm);
+    const gems=(SD.given&&SD.given[i])||0;
+    let held=""; for(let k=0;k<gems;k++) held+='<div>'+SANDART(RAINBOW[(i+k)%7])+'</div>';
+    if(extraOwner===i) held+='<div>'+SANDART(null,true)+'</div>';
+    return '<div class="who"><div>'+art+'</div><div class="got">'+held+'</div>'+nm+'</div>';
+  }).join("")+'</div>';
+}
+function crewShow(html,cap){
+  try{ const s=$("sand"); if(s) s.style.display="none";
+    const box=$("sandBox"); if(box) box.style.display="none";
+    const fr=$("friends"); if(fr) fr.style.display="none"; }catch(e){}
+  showPanel('<div id="crewShow">'+html+(cap?'<div class="cap">'+cap+'</div>':'')+'</div>');
+  return document.getElementById("crewShow");
+}
+/* a coin flies from the pile to wherever it ends up */
+function coinFlyTo(target,then){
+  const host=document.getElementById("crewShow"); if(!host||!target){ if(then) then(); return; }
+  const f=document.createElement("div"); f.className="fly"; f.innerHTML=SANDART(null,true);
+  const hr=host.getBoundingClientRect(), tr=target.getBoundingClientRect();
+  f.style.left=(hr.width/2-13)+"px"; f.style.top="0px"; host.appendChild(f);
+  requestAnimationFrame(()=>{ f.style.transform="translate("+((tr.left+tr.width/2)-(hr.left+hr.width/2))+"px,"+((tr.top+tr.height*.55)-hr.top)+"px)"; });
+  setTimeout(()=>{ f.style.opacity="0"; if(then) then(); },760);
+}
+
+leftover=function(r){
+  const coins=r;                                  /* what is left over is always the gold */
+  $("sandChoices").style.display="flex";
+  const word=coins===1?"one gold coin is":coins+" gold coins are";
+  $("sandInstr").textContent=(coins===1?"1 gold coin":coins+" gold coins")+" left over. What now?";
+  const intro="Everybody has the same gems. And "+word+" left over. There is no wrong answer here.";
+  const opts=[
+    {k:"crewbox",art:crewArt("crewbox",ICO.blocks),w:"Crew box",phrase:"Put it in the crew box.",
+     go:()=>{ crewShow(crewRow()+'<div class="box">'+(im("scene_crewbox")||im("sand_bucket")||"")+'</div>',"The crew box");
+       setTimeout(()=>{ const box=document.querySelector("#crewShow .box");
+         coinFlyTo(box,()=>say("Into the crew box. It is nobody's and everybody's. Any of you can take it out to play with.",undefined,()=>setTimeout(signsStart,2200))); },400); }},
+    {k:"tower",art:crewArt("tower",ICO.swap),w:"Build it",phrase:"Use it to build one thing together.",
+     go:()=>{ crewShow(crewRow()+'<div class="box">'+(im("scene_tower")||"")+'</div>',"One thing, built together");
+       setTimeout(()=>{ const box=document.querySelector("#crewShow .box");
+         coinFlyTo(box,()=>{ try{ parts(document.getElementById("crewShow"),120,40,10); }catch(e){}
+           say("You built one thing with it, together. Now the extra is something all of you can play with.",undefined,()=>setTimeout(signsStart,2200)); }); },400); }},
+    {k:"turn",art:crewArt("turn",ICO.wait),w:"Take turns",phrase:"One friend keeps it today, somebody else next time.",
+     go:()=>{ const who=Math.floor(Math.random()*SD.crew.length);
+       crewShow(crewRow(),"Whose turn is it today?");
+       setTimeout(()=>{ const cards=document.querySelectorAll("#crewShow .who");
+         coinFlyTo(cards[who],()=>{ crewShow(crewRow(who),SD.crew[who]+" keeps it today");
+           say(SD.crew[who]+" keeps the coin today. Next time somebody else gets a turn, and the coin visits everybody.",undefined,()=>setTimeout(signsStart,2200)); }); },500); }},
+    {k:"share",art:crewArt("vote",ICO.heart),w:"Give it away",phrase:"Give it to a friend.",
+     go:()=>{ const who=Math.floor(Math.random()*SD.crew.length);
+       crewShow(crewRow(),"Who would like it?");
+       setTimeout(()=>{ const cards=document.querySelectorAll("#crewShow .who");
+         coinFlyTo(cards[who],()=>{ crewShow(crewRow(who),"For "+SD.crew[who]);
+           say("You gave it to "+SD.crew[who]+". Look at that face. Giving something away feels good in your chest.",undefined,()=>setTimeout(signsStart,2200)); }); },500); }},
+    {k:"vote",art:crewArt("vote",ICO.talk),w:"Ask them",phrase:"Ask the crew what they think.",
+     go:()=>{ const pick=["crewbox","turn","share"][Math.floor(Math.random()*3)];
+       const said=SD.crew.slice(0,2).join(" and ");
+       crewShow(crewRow(),"The crew is deciding");
+       say("You asked the crew. "+said+" talked about it. They picked "+(pick==="crewbox"?"the crew box":pick==="turn"?"taking turns":"giving it away")+".",
+         undefined,()=>{ const o=LEFT_OPTS[pick]; if(o) o(); }); }}
+  ];
+  const LEFT_OPTS={}; opts.forEach(o=>{ if(o.go) LEFT_OPTS[o.k]=o.go; });
+  const btns=choices($("sandChoices"),opts,(c)=>{ $("sandChoices").innerHTML=""; $("sandChoices").style.display="none";
+    SD.pot=0; if(c.go) c.go(); else setTimeout(signsStart,2200); },{wait:true});
+  say(intro,undefined,()=>setTimeout(btns.narrate,400));
+};
 
 /* ============ show first, then do (Q25) ============
    The first time he opens a place, the game plays itself for a few seconds with a
