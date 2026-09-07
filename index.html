@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cn</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 co</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -989,6 +989,8 @@ say=function(t,who,onDone){
   S.last=t; SAYWHO=who; SAYDONE=onDone||null;
   const tok=++SAYTOK;
   const finish=()=>{ if(tok!==SAYTOK) return; const d=SAYDONE; SAYDONE=null; if(d) d(); };
+  if(onDone){                                        /* iOS sometimes never says it finished */
+    setTimeout(()=>{ if(tok===SAYTOK&&SAYDONE===onDone) finish(); }, Math.min(9000, estMs(t,who)+3500)); }
   if(S.voiceOn===false){ stopLips(); try{ speechSynthesis.cancel(); }catch(e){}
     setTimeout(finish, estMs(t,who)); return; }
   const lips=(who==="guide"||who==="melissa"||!who);
@@ -1600,6 +1602,9 @@ function splashStart(lvl){ show("scr-splash");
 }
 /* Q15: he reads simple words. Three signs, one says the word he just made. */
 function readSign(){
+  if(!SP||SP.tok!==SPTOK) return;                     /* not this round */
+  if(document.getElementById("readBox")) return;      /* already asking */
+  if(!SP.over||SP.i<SP.w.length) return;              /* the word is not finished yet */
   const a=$("arena"); const w=SP.w;
   const others=CFG.signWords.map(s=>s.replace(/\s+/g,"")).filter(s=>s!==w).sort(()=>Math.random()-.5).slice(0,2);
   const list=[w].concat(others).sort(()=>Math.random()-.5);
@@ -1612,7 +1617,10 @@ function readSign(){
     b.onclick=()=>{ if(SP.read) return;
       if(s===w){ SP.read=true; b.classList.add("on"); chord([523,659,784]);
         try{ const r=b.getBoundingClientRect(),ar=a.getBoundingClientRect(); parts(a,r.left-ar.left+r.width/2,r.top-ar.top+r.height/2,12); }catch(e){}
-        say("That one says "+w+". And you worked it out all by yourself","guide",()=>{ if(box.remove) box.remove(); found("splash"); }); }
+        let done=false;
+        const go=()=>{ if(done) return; done=true; if(box.remove) box.remove(); found("splash"); };
+        say("That one says "+w+". And you worked it out all by yourself","guide",go);
+        setTimeout(go,3200); }
       else { wrong++; blip(390,.12,"sine"); say("That sign says "+s+". Find the one that says "+w+".","guide");
         if(wrong>=2){ list.forEach((s2,j)=>{ if(s2===w&&row.children[j]) row.children[j].classList.add("on"); }); } } };
     row.appendChild(b); });
@@ -2488,7 +2496,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 cn) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 co) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -2663,7 +2671,12 @@ place=function(){ const a=$("arena"),h=$("hero"); if(!a||!h||SP.x==null) return;
   h.style.transform="translate3d("+x.toFixed(1)+"px,0,0)"+(SP.face<0?" scaleX(-1)":"");
   if(SP.face<0) h.style.transformOrigin="50% 50%"; };
 
+let SPTOK=0;
 splashStart=function(lvl){ show("scr-splash");
+  SPTOK++;
+  try{ stopLoops(); }catch(e){}
+  try{ speechSynthesis.cancel(); }catch(e){}
+  try{ const rb=document.getElementById("readBox"); if(rb) rb.remove(); }catch(e){}
   /* short words first, longer ones as he gets better, and never the same one twice running */
   const allDone=Object.keys(SETS).every(k=>ownIn(k).length>=7);
   const pool=CFG.signWords.filter(w=>{ const L=w.length;
@@ -2672,7 +2685,7 @@ splashStart=function(lvl){ show("scr-splash");
   const usable=(pool.length?pool:CFG.signWords).filter(w=>w!==S.lastSign);
   const word=(usable.length?usable:CFG.signWords)[Math.floor(Math.random()*(usable.length?usable.length:CFG.signWords.length))].replace(/\s+/g,"");
   S.lastSign=word;
-  SP={w:word,i:0,items:[],speed:1.4+lvl*.35,spawn:0,x:.5,tx:.5,face:1,over:false,buckets:Math.min(3,1+lvl),bt:420+Math.random()*160,bucket:null,moved:0,
+  SP={tok:SPTOK,w:word,i:0,items:[],speed:1.4+lvl*.35,spawn:0,x:.5,tx:.5,face:1,over:false,buckets:Math.min(3,1+lvl),bt:420+Math.random()*160,bucket:null,moved:0,
       drops:[],anim:null,tilt:0,wob:0,evtCount:0,last:0,idle:0,running:false};
   $("signTrack").innerHTML=word.split("").map(l=>'<div class="slot">'+l+'</div>').join("");
   markNext();
@@ -2710,7 +2723,8 @@ function flyToSlot(d,idx){ const sl=document.querySelectorAll("#signTrack .slot"
   requestAnimationFrame(()=>{ f.style.transform="translate("+(r1.left+r1.width/2-r0.left-r0.width/2)+"px,"+(r1.top+r1.height/2-r0.top-r0.height/2)+"px) scale(.6)"; f.style.opacity="0"; });
   setTimeout(()=>{ f.remove(); sl.classList.add("got"); markNext(); },560); }
 
-loopSplash=function(now){ if(!SP||(SP.over&&!SP.anim)) return;   /* the tipping bucket finishes first */
+loopSplash=function(now){ if(!SP||SP.tok!==SPTOK) return;
+  if(SP.over&&!SP.anim&&!SP.bucket) return;                       /* the bucket finishes first */
   const a=$("arena"); if(!a||!a.clientWidth){ RAF=trackRAF(requestAnimationFrame(loopSplash)); return; }
   now=(typeof now==="number")?now:(typeof performance!=="undefined"?performance.now():Date.now()); if(!SP.last) SP.last=now; let dt=Math.min(50,now-SP.last); SP.last=now;
   const f=dt/16.667;                                             /* one "frame" is 1/60 s, whatever the screen does */
@@ -2755,12 +2769,14 @@ loopSplash=function(now){ if(!SP||(SP.over&&!SP.anim)) return;   /* the tipping 
           /* if the bucket is mid-tip, let the splash land before the sign is read */
           const finish=()=>{ if(CFG.learn.reading) say("You made the sign! It says "+SP.w+".","guide",()=>setTimeout(readSign,300));
             else { say("You made the sign! It says "+SP.w+"."); setTimeout(()=>found("splash"),450); } };
-          const waitForBucket=()=>{ if(SP&&(SP.anim||SP.bucket)){ setTimeout(waitForBucket,300); return; } finish(); };
+          const mine=SP.tok;
+          const waitForBucket=()=>{ if(!SP||SP.tok!==mine) return;
+            if(SP.anim||SP.bucket){ setTimeout(waitForBucket,300); return; } finish(); };
           setTimeout(waitForBucket,350); } }
       else { blip(430,.1,"sine",.07); d.style.transition="transform .3s,opacity .3s"; d.style.opacity="0"; d.style.transform+=" scale(.6)"; setTimeout(()=>d.remove(),320); return false; }
       d.remove(); return false; }
     return true; });
-  place(); if(!SP.over||SP.anim) RAF=trackRAF(requestAnimationFrame(loopSplash));
+  place(); if(!SP.over||SP.anim||SP.bucket) RAF=trackRAF(requestAnimationFrame(loopSplash));
 };
 
 bucketStart=function(){
