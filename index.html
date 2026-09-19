@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cp</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cr</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -1433,10 +1433,10 @@ function found(game,extra){
   } else { const mine=SETS[game];
     $("toastArt").innerHTML='<div style="width:90px;margin:0 auto;">'+(mine?mine.art(6):ART.cole({arms:"up"}))+'</div>';
     const done=Object.keys(SETS).every(k=>ownIn(k).length>=7);
-    const nm=mine?mine.n+"s":"things";
-    $("toastMsg").textContent=done?"The backpack is full of everything!":("Every single "+nm.slice(0,-1)+" is yours! The prize machine has the rest.");
-    say(done?"The backpack holds every single thing from the playground!"
-           :("That is every single "+nm.slice(0,-1)+". The prize machine can bring you the others.")); }
+    const nm=mine?mine.n:"thing";
+    $("toastMsg").textContent=done?"The backpack is full of everything! Play any spot you like.":("You have every "+nm+" already. Play here as long as you like.");
+    say(done?"The backpack holds every single thing from the playground. You can still play anywhere you like."
+           :("You already have every "+nm+". No more to find here, but you can play as long as you like.")); }
   if(CFG.celebrate.confetti){ for(let i=0;i<18;i++){ const c=document.createElement("span"); c.className="conf";
     c.style.background=RAINBOW[i%7]; const s=(8+Math.random()*9)+"px"; c.style.width=s; c.style.height=s;
     c.style.borderRadius=Math.random()<.5?"50%":"3px"; c.style.left=(4+Math.random()*90)+"%";
@@ -1460,7 +1460,11 @@ function renderBag(){ const g=$("cgrid"); g.innerHTML="";
     g.appendChild(row); });
 }
 $("bagBtn").onclick=()=>{ blip(560); renderBag(); show("scr-bag");
-  say(S.collection.length?(CFG.child.name+"'s backpack. "+(S.collection.length===1?"One thing so far.":S.collection.length+" things so far."))
+  const full=Object.keys(SETS).filter(k=>ownIn(k).length>=7);
+  const allDone=full.length===Object.keys(SETS).length;
+  const extra=allDone?" You found every single thing. The whole playground is in there."
+    :(full.length?(" You have all seven "+SETS[full[full.length-1]].n+"s."):"");
+  say(S.collection.length?(CFG.child.name+"'s backpack.  "+(S.collection.length===1?"One thing so far.":S.collection.length+" things so far.")+extra)
     :(CFG.child.name+"'s backpack. It is waiting for things to find.")); };
 $("bagBack").onclick=()=>goMap();
 
@@ -1894,7 +1898,7 @@ function signsStart(){ if(SD.phase==="signs")return; SD.phase="signs"; SD.done=0
     w.innerHTML='<div style="width:40px;">'+ART.sign("")+'</div><span class="mk">'+CFG.child.markSymbol+'</span>';
     w.onclick=e=>{ e.stopPropagation(); if(w.classList.contains("done"))return;
       w.classList.add("done"); chord([523,659]);
-      say(String(CFG.child.markSymbol).toLowerCase());
+      sayChatter(CFG.child.markSymbol+". "+CFG.child.markMeaning+".");
       SD.done++; if(SD.done>=need)setTimeout(()=>found("sand","Everybody got treasure and a sign."),400); };
     fr.appendChild(w); });
   /* if there was nowhere to put the signs, do not sit on a blank screen */
@@ -1909,7 +1913,7 @@ const BIDEAS=[
  {k:"sign",w:"Sign",label:"A sign with our names on it",r:"A sign! Tristan says yes! Now everybody knows whose clubhouse it is."},
  {k:"fish",w:"Fish tank",label:"A fish tank for Click Clack",r:"A fish tank! Tristan says yes! Click Clack can come and visit."},
  {k:"snail",w:"Snails",label:"A snail garden for Biggie Snails and Tupac Shakira Shakira",r:"A snail garden! Tristan says yes! Both snails can move right in."},
- {k:"cat",w:"Cat",label:"A sunny spot where a cat could nap",r:"A cat spot! Tristan says yes! Any cat walking past is going to want that sunny corner."}
+ {k:"cat",w:"Cat",label:"A cat, with a sunny spot to nap in",r:"A cat spot! Tristan says yes! Any cat walking past is going to want that sunny corner."}
 ].concat(CFG.wishDog?[
  {k:"dog",w:"Dog house",label:"A dog house, for the dog I am going to have one day",
   r:"A dog house! Tristan says yes! It can wait right there, ready for the day "+CFG.child.name+" gets a dog."}
@@ -2426,7 +2430,7 @@ function placePiece(k,i,cx,cy){
   BD.sel_k=null; document.querySelectorAll&&document.querySelectorAll("#parts .part.on").forEach(x=>x.classList.remove("on"));
   blip(560+i*30); const st=$("buildStage"); const r=stageRect(); parts(st,r.width*(pc.x+pc.w/2)/100,r.height*(100-pc.b-pc.hp/2)/100,5);
   if(BD.withPal){ BD.turn="pal"; $("buildInstr").textContent="Tristan's turn."; say("Nice. Tristan's turn."); setTimeout(palPick,CFG.tuning.helperMs); }
-  else { $("buildInstr").textContent="Build any way you like."; if(Math.random()<.3) say(["Ooh nice.","Looking good!","Your build, your way."][Math.floor(Math.random()*3)]); }
+  else { $("buildInstr").textContent="Build any way you like."; if(Math.random()<.18) sayChatter(["Ooh nice.","Looking good!","That piece fits."][Math.floor(Math.random()*3)]); }
 }
 function stageTap(e){ if(!BD.sel_k) return; const r=stageRect();
   placePiece(BD.sel_k,BD.sel_i,(e.clientX-r.left)/r.width*100,(r.bottom-e.clientY)/r.height*100); }
@@ -2500,7 +2504,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 cp) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 cr) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -2932,7 +2936,7 @@ snackStart=function(lvl){ show("scr-snack");
 
 flip=function(b,you){ if(SN.lock||b.classList.contains("up")||b.classList.contains("done"))return;
   blip(600); b.classList.add("up");
-  if(you)sayPlain(b.dataset.k); SN.seen[b.dataset.i]=b.dataset.k; SN.open.push(b);
+  if(you)sayName(b.dataset.k); SN.seen[b.dataset.i]=b.dataset.k; SN.open.push(b);
   if(SN.open.length===2){ SN.lock=true; const [a,c]=SN.open;
     setTimeout(()=>{
       if(a.dataset.k===c.dataset.k){ a.classList.add("done","bounce");c.classList.add("done","bounce"); chord([523,659]); SN.left--;
@@ -3048,7 +3052,7 @@ dig=function(b,byRival){ if(b.classList.contains("open")||b.classList.contains("
     const d=$("sand"),r=b.getBoundingClientRect(),dr=d.getBoundingClientRect();
     parts(d,r.left-dr.left+r.width/2,r.top-dr.top+r.height/2,8);
     if(has){ if(coin) SD.coins=(SD.coins||0)+1; else SD.total++;   /* coins are the extras */
-      if(byRival){ SD.rival++; racerAdd("him",colour,coin); } else { SD.mine++; racerAdd("you",colour,coin); if(!coin) sayPlain(String(SD.total)); } }
+      if(byRival){ SD.rival++; racerAdd("him",colour,coin); } else { SD.mine++; racerAdd("you",colour,coin); if(!coin) sayName(String(SD.total)); } }
     else racerAdd(byRival?"him":"you",null);
     if([...d.children].filter(t=>t.classList.contains("stile")).every(t=>t.classList.contains("open"))){
       if(rivalT){clearInterval(rivalT);rivalT=null;}
@@ -3718,7 +3722,10 @@ const RL_FACES=[["happy","Happy","I was HAPPY! Big happy!"],["sad","Sad","I was 
                 ["unsure","Not sure","I was not sure about it. My thinking face."],["stand","Calm","I was calm. Just watching the clouds."]];
 function rlPose(who,pose){ return im(who.toLowerCase()+"_"+pose)||im(who.toLowerCase()+"_stand")||ART.friend(who,{}); }
 function rlBack(who){ return im(who.toLowerCase()+"_back"); }   /* a real back view, if that friend has one */
-function rlTurnAway(){ const c=$("rlCaller"); if(!c) return; const back=rlBack(RL.caller);
+function rlTurnAway(){ const c=$("rlCaller"); if(!c) return;
+  if(RL&&(RL.phase==="freeze"||RL.phase==="frozen")) return;     /* never turn away mid-freeze */
+  RL.facing="back";
+  const back=rlBack(RL.caller);
   c.classList.add("away"); c.classList.toggle("noback",!back);
   c.querySelector(".flip").innerHTML=back||rlPose(RL.caller,"stand"); }
 
@@ -3753,7 +3760,7 @@ playStart=function(lvl){ show("scr-play");
 function rlBubble(t,cls){ const b=$("rlBubble"); if(!b) return;
   if(!t){ b.classList.remove("on"); return; }
   b.textContent=t; b.className=""; b.id="rlBubble"; b.classList.add("on",cls); }
-function rlGo(first){ if(!RL) return; RL.phase="go"; RL.wig=false;
+function rlGo(first){ if(!RL||RL.done) return; RL.phase="go"; RL.wig=false; RL.nudged=false;
   rlTurnAway();
   rlBubble("GO!","go"); blip(700,.09); setTimeout(()=>rlBubble(null),900);
   $("rlHint").classList.remove("on");
@@ -3768,6 +3775,7 @@ function rlWarn(){ if(!RL||RL.phase!=="go") return;
 function rlFreeze(){ if(!RL||RL.done) return; RL.freezes=(RL.freezes||0)+1; RL.phase="freeze"; $("rlHint").classList.remove("on");
   const pick=RL_FACES[Math.floor(Math.random()*RL_FACES.length)]; RL.pose=pick;
   const c=$("rlCaller"); c.classList.remove("away","noback"); c.querySelector(".flip").innerHTML=rlPose(RL.caller,pick[0]);
+  RL.facing="front";
   rlBubble("FREEZE!","stop"); blip(330,.14,"square",.08);
   RL.freezeAt=performance.now();
   const stamp=RL.freezeAt;
@@ -3809,11 +3817,15 @@ function rlLoop(now){ if(!RL) return;
     const cw=cole.offsetWidth||60; cole.style.transform="translate3d("+((RL.x*W)-cw/2).toFixed(1)+"px,0,0)"; }
   /* the finish line: reach the caller */
   if(caller&&RL.phase!=="five"&&RL.phase!=="done"){
-    if(RL.x>=(RL.maxX||.96)-.004&&(RL.phase==="go"||RL.phase==="warn")&&(RL.freezes||0)>=2) rlFive();
+    const atEnd=RL.x>=(RL.maxX||.96)-.004;
+    if(atEnd&&(RL.phase==="go"||RL.phase==="warn")){
+      if((RL.freezes||0)>=2) rlFive();
+      else if(!RL.nudged){ RL.nudged=true;               /* he is there early: one more turn first */
+        clearTimeout(RL.timer); rlWarn(); } }
   }
   RAF=trackRAF(requestAnimationFrame(rlLoop));
 }
-function rlFive(){ if(!RL) return; RL.phase="five"; clearTimeout(RL.timer); rlBubble(null); $("rlHint").classList.remove("on");
+function rlFive(){ if(!RL||RL.phase==="five"||RL.done) return; RL.phase="five"; RL.nudged=false; clearTimeout(RL.timer); rlBubble(null); $("rlHint").classList.remove("on");
   const c=$("rlCaller"), cole=$("rlCole"); c.classList.remove("away","noback"); c.querySelector(".flip").innerHTML=rlPose(RL.caller,"happy");
   c.classList.add("five"); if(cole) cole.classList.add("five");
   const st=$("rlStage"); parts(st,st.clientWidth*.85,st.clientHeight*.5,10); chord([523,659,784],0.12);
@@ -4097,9 +4109,9 @@ loopFix=function(){ if(!FX||FX.done) return;
     const hint=$("fixHint");
     if(hint){ hint.textContent = inG ? "Hold it there..." : (FX.e<FX.tgt[0] ? (r==="tap"?"Keep tapping.":"Let go, it is too slow now.") : (r==="tap"?"Too far. Stop tapping and wait.":"Keep holding.")); }
     /* a word or two, but not the same one over and over */
-    if(inG&&FX.settle===6&&FX.said<1){ FX.said=1; blip(700,.06); say(pick(["That is it. Hold it there.","There. Keep it steady.","Right in the middle. Stay there."])); }
-    if(!inG&&FX.e>FX.tgt[1]+10&&FX.said<2&&r==="tap"){ FX.said=2; say(pick(["Whoa, too fast. Stop tapping and let it come down.","That is over the green. Wait for it to fall back."])); }
-    if(!inG&&FX.e<FX.tgt[0]-10&&FX.said<2&&r==="hold"){ FX.said=2; say(pick(["That is too slow now. Let go and it comes back up.","Under the green. Let go for a moment."])); }
+    if(inG&&FX.settle===6&&FX.said<1){ FX.said=1; blip(700,.06); sayChatter(pick(["That is it. Hold it there.","There. Keep it steady.","Right in the middle. Stay there."])); }
+    if(!inG&&FX.e>FX.tgt[1]+10&&FX.said<2&&r==="tap"){ FX.said=2; sayChatter(pick(["Whoa, too fast. Stop tapping and let it come down.","That is over the green. Wait for it to fall back."])); }
+    if(!inG&&FX.e<FX.tgt[0]-10&&FX.said<2&&r==="hold"){ FX.said=2; sayChatter(pick(["That is too slow now. Let go and it comes back up.","Under the green. Let go for a moment."])); }
 
     if(FX.settle>=need){ FX.busy=true; FX.hold=false; $("fixHold").classList.remove("held"); $("breathe").style.display="none";
       if(st) st.classList.remove("inzone");
@@ -4625,6 +4637,63 @@ startGame=function(g){ demoEnd(false); _startGameDemo.apply(this,arguments);
   setTimeout(()=>{ if(!window.__pickingMode) demoStart(g); },400); };
 const _showDemo=show;
 show=function(){ demoEnd(false); return _showDemo.apply(this,arguments); };
+
+
+/* ============ ONE VOICE, ONE QUEUE ============
+   A five year old taps fast, taps twice, taps while she is still talking. Before this,
+   every tap could start a new line on top of the last one, and the game's "what happens
+   next" hung off whichever line won. Now there is a single queue:
+     - lines wait their turn instead of talking over each other
+     - a line that is dropped still hands over, so nothing can hang
+     - chatter (hints, encouragement) is skipped entirely if she is already talking
+     - the same line twice in a row is ignored
+     - nothing waits longer than a few seconds, whatever the device does
+   Everything above this point calls say() as before. */
+(function(){
+  const inner=say;
+  let Q=[], busy=null;
+  const once=fn=>{ let ran=false; return ()=>{ if(ran) return; ran=true; try{ if(fn) fn(); }catch(e){} }; };
+
+  function pump(){
+    if(busy||!Q.length) return;
+    const it=Q.shift(); busy=it;
+    let settled=false;
+    const finish=()=>{ if(settled) return; settled=true;
+      if(busy===it) busy=null;
+      it.done();
+      setTimeout(pump,70); };
+    try{ inner(it.t,it.who,finish); }catch(e){ finish(); return; }
+    let ms=3000; try{ ms=estMs(it.t,it.who); }catch(e){}
+    setTimeout(finish,Math.min(12000,ms+3500));        /* nothing waits forever */
+  }
+
+  say=function(t,who,cb,allowDup){
+    if(!t||typeof t!=="string"){ if(cb) cb(); return; }
+    const done=once(cb);
+    if(!allowDup&&((busy&&busy.t===t)||Q.some(x=>x.t===t))){ done(); return; }   /* already said or queued */
+    if(Q.length>=3){ const drop=Q.shift(); drop.done(); }           /* never build a backlog */
+    Q.push({t,who,done}); pump();
+  };
+
+  /* hints and encouragement: only if she is not already talking */
+  window.sayChatter=function(t,who){ if(busy||Q.length) return; say(t,who); };
+  /* a food name or a count: always said, always in turn, even twice running */
+  window.sayName=function(t){ if(typeof DEMO!=="undefined"&&DEMO) return;
+    sayHush();                                   /* his tap wins: the waiting chatter goes */
+    say(String(t),undefined,null,true); };
+
+  /* leaving a screen: drop everything, but let every waiting step continue */
+  const _showFlush=show;
+  show=function(){
+    const all=Q.slice(); Q=[]; const b=busy; busy=null;
+    all.forEach(x=>x.done()); if(b) b.done();
+    try{ speechSynthesis.cancel(); }catch(e){}
+    setTimeout(()=>{ try{ speechSynthesis.cancel(); }catch(e){} },120);   /* iOS needs a second nudge */
+    return _showFlush.apply(this,arguments);
+  };
+  /* a tap on a card or a piece means "get on with it": drop the waiting chatter */
+  window.sayHush=function(){ const all=Q.slice(); Q=[]; all.forEach(x=>x.done()); };
+})();
 
 /* ============ boot ============ */
 (function(){ const n=CFG.child.name;
