@@ -172,7 +172,7 @@
       <h1>Cole's Big Playground</h1>
       <p class="sub">A game made just for Cole</p>
       <button class="big green" id="startBtn">Play</button>
-      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 co</div>
+      <div id="buildStamp" style="position:absolute;right:10px;bottom:6px;font-size:10px;color:rgba(43,58,66,.45);">build 25.08 cp</div>
       <button id="resetLink" style="background:none;border:none;color:#fff;opacity:.7;font-family:inherit;font-size:13px;text-decoration:underline;cursor:pointer;">Start over from the beginning</button>
     </div>
   </section>
@@ -986,9 +986,13 @@ let SAYTOK=0, SAYDONE=null, SAYWHO="";
 const _say2=say;
 say=function(t,who,onDone){
   if(!t){ if(onDone) onDone(); return; }
-  S.last=t; SAYWHO=who; SAYDONE=onDone||null;
+  const once=fn=>{ if(!fn) return null; let ran=false; const w=()=>{ if(ran) return; ran=true; try{ fn(); }catch(e){} }; w.__once=true; return w; };
+  const mine=once(onDone);
+  if(SAYDONE){ const prev=SAYDONE; SAYDONE=null; setTimeout(prev,0); }   /* the old line still hands over */
+  S.last=t; SAYWHO=who; SAYDONE=mine;
   const tok=++SAYTOK;
-  const finish=()=>{ if(tok!==SAYTOK) return; const d=SAYDONE; SAYDONE=null; if(d) d(); };
+  const finish=()=>{ const d=SAYDONE; if(tok===SAYTOK) SAYDONE=null; if(d) d(); };
+  if(mine) setTimeout(()=>{ if(SAYDONE===mine){ SAYDONE=null; mine(); } }, Math.min(9000,estMs(t,who)+4000));
   if(onDone){                                        /* iOS sometimes never says it finished */
     setTimeout(()=>{ if(tok===SAYTOK&&SAYDONE===onDone) finish(); }, Math.min(9000, estMs(t,who)+3500)); }
   if(S.voiceOn===false){ stopLips(); try{ speechSynthesis.cancel(); }catch(e){}
@@ -2496,7 +2500,7 @@ buildStart=function(){ show("scr-build");
 })();
 
 
-/* ============ SPLASH PAD, rebuilt (build 25.08 co) ============
+/* ============ SPLASH PAD, rebuilt (build 25.08 cp) ============
    One loop, driven by real time (so it runs the same on a 60 Hz phone and a 120 Hz iPad).
    The bucket is her wooden bucket on a pole: it wobbles as it fills, rocks harder as it gets
    ready, tips over and the water is drawn in code (a sheet that widens on the way down,
@@ -3223,16 +3227,20 @@ loopFix=function(){ if(!FX||FX.done) return;
       const last=FX.stage===FX.stages.length-1;
       const line = last ? "Ready! You fixed it!" : r==="tap" ? "Green! There it goes." : "Green. Slow and calm. Nice breathing.";
       $("fixInstr").textContent = last ? "Ready!" : "Green!";
-      say(line,"guide",()=>{
+      let moved=false;
+      const nextSwing=()=>{ if(moved) return; moved=true;
         FX.stage++;
         if(FX.stage>=FX.stages.length){ FX.done=true; calmHide(); if(st) st.classList.remove("shake");
           if(m&&IMG.machine_win){ MACHSTATE="machine_win"; m.innerHTML=im("machine_win"); }
-          say("Your body has an engine too. Fast body, slow body, and ready body. And you are the driver.","guide",()=>found("fix"));
+          let ended=false; const endIt=()=>{ if(ended) return; ended=true; engineOutro(()=>found("fix")); };
+          say("Your body has an engine too. Fast body, slow body, and ready body. And you are the driver.","guide",endIt);
+          setTimeout(endIt,4200);                      /* never wait on speech alone */
           return; }
-        /* the engine does its own thing before the next swing: overheats after a tap round, runs down after a hold round */
         if(r==="tap"){ FX.drift=.9; FX.driftTo=88; $("fixInstr").textContent="Uh oh. It is heating up."; }
         else { FX.drift=-.9; FX.driftTo=10; $("fixInstr").textContent="Oh. Now it is running down."; }
-      }); }
+      };
+      say(line,"guide",nextSwing);
+      setTimeout(nextSwing,3000); }
   }
   RAF=trackRAF(requestAnimationFrame(loopFix));
 };
@@ -4103,16 +4111,19 @@ loopFix=function(){ if(!FX||FX.done) return;
       const line = last ? "Ready! You fixed the robot!"
         : r==="tap" ? pick(["You found the middle.","Steady hands. That is the middle.","There it is, right in the green."])
                     : pick(["Slow breathing brought it down.","You breathed it back to the middle.","Nice and calm. Right in the green."]);
-      say(line,"guide",()=>{
+      let moved=false;
+      const nextSwing=()=>{ if(moved) return; moved=true;
         FX.stage++;
         if(FX.stage>=FX.stages.length){ FX.done=true; calmHide(); if(st) st.classList.remove("shake");
           if(m&&IMG.machine_win){ MACHSTATE="machine_win"; m.innerHTML=im("machine_win"); }
           say("You fixed it. The engine is doing exactly what you told it to.","guide");
-          setTimeout(()=>engineOutro(()=>found("fix")),S.seen.__engineTalk?600:1500);
+          setTimeout(()=>engineOutro(()=>found("fix")),S.seen.__engineTalk?900:1800);
           return; }
         if(r==="tap"){ FX.drift=.9+L*.15; FX.driftTo=90; $("fixInstr").textContent="Uh oh, it is racing again."; }
         else { FX.drift=-(.9+L*.15); FX.driftTo=8; $("fixInstr").textContent="Now it is running down."; }
-      }); }
+      };
+      say(line,"guide",nextSwing);
+      setTimeout(nextSwing,3000);                      /* never wait on speech alone */ }
   }
   RAF=trackRAF(requestAnimationFrame(loopFix));
 };
