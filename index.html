@@ -1018,15 +1018,28 @@ say=function(t,who,onDone){
       if(typeof VOICE!=="undefined"&&VOICE) u.voice=VOICE;
       const P=(typeof VP!=="undefined"&&(VP[who]||VP.narr))||{r:1,p:1};
       u.rate=Math.max(.55,P.r*(short?.82:1)); u.pitch=P.p; u.onend=go; u.onerror=go;
+      let started=false; u.onstart=()=>{ started=true; };
       setTimeout(go,_estMs(seg,who)+1500);
+      const fire=()=>{ if(tok!==SAYTOK) return;
+        try{ speechSynthesis.resume(); }catch(e){}
+        speechSynthesis.speak(u);
+        /* silent-voice rescue: if nothing starts, retry once with the device default voice */
+        setTimeout(()=>{ if(started||done||tok!==SAYTOK) return;
+          try{ speechSynthesis.cancel(); const u2=new SpeechSynthesisUtterance(seg);
+            u2.lang="en-US"; u2.rate=u.rate; u2.pitch=u.pitch; u2.onend=go; u2.onerror=go;
+            speechSynthesis.speak(u2); }catch(e){} },1400); };
       /* iOS garbles a phrase spoken the instant after a cancel: let it settle first */
-      if(first){ first=false; setTimeout(()=>{ if(tok===SAYTOK) speechSynthesis.speak(u); },160); }
-      else speechSynthesis.speak(u);
+      if(first){ first=false; setTimeout(fire,160); }
+      else fire();
     }catch(e){ go(); }
   })();
 };
 /* the repeat button carries the pending "what happens next" with it */
 $("sayBtn").onclick=()=>{ say(S.last,SAYWHO,SAYDONE); };
+/* iOS keeps speech locked until it is used once inside a real tap: do that on the first touch */
+(function(){ function unlock(){ try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0;
+  speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){} }
+  document.addEventListener("pointerdown",unlock,{once:true,passive:true}); })();
 
 /* ---- Miss Melissa's mouth moves while she is speaking ----
    Real mouths close in the middle of words. The first version never closed hers,
